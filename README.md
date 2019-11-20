@@ -1,1 +1,2 @@
-geometric_algorithms_project
+# Geometric Algorithms Project
+This repository contains QuadTree and KD-Tree algorithms implemented for an group project assigment as part of "Geometric algorithms" course at AGH University of Science and Technology in Cracow.
