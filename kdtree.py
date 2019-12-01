@@ -1,6 +1,5 @@
 import numpy as np
 from point import Point
-from visualiser import Visualiser
 
 
 class Node:
@@ -77,7 +76,7 @@ def report_subtree(node):
     if node is None:
         return None
     result = [node.point]
-    res =  report_subtree(node.left)
+    res = report_subtree(node.left)
     if res is not None:
         result += res
     res = report_subtree(node.right)
@@ -100,7 +99,7 @@ def check_child(node, child, actual_scope, depth, scope):
             new_scope.common(y_low=node.point.x)
 
         if actual_scope.contains(new_scope):
-            return report_subtree(node.left)
+            return report_subtree(child)
         elif actual_scope.intersects(new_scope):
             return _search(child, scope, new_scope, depth + 1)
         return None
@@ -111,6 +110,7 @@ def _search(node, scope, actual_scope=Scope(), depth=0):
         return None
     if node.left is None and node.right is None:
         return None if not scope.in_scope(node.point) else [node.point]
+
     result = []
     res = check_child(node, node.left, actual_scope, depth, scope)
     if res is not None:
@@ -121,23 +121,32 @@ def _search(node, scope, actual_scope=Scope(), depth=0):
     return result
 
 
-def search(kdtree, x_low, x_high, y_low, y_high):
+def search(tree, x_low, x_high, y_low, y_high):
     scope = Scope(x_low, x_high, y_low, y_high)
-    res = [kdtree.point] if scope.in_scope(kdtree.point) else []
-    return res + [(p.x, p.y) for p in _search(kdtree, scope)]
+    res = [tree.point.get_tuple()] if scope.in_scope(tree.point) else []
+    return res + [p.get_tuple() for p in _search(tree, scope)]
+
+
+def print_tree(node, depth=0):
+    if node is None:
+        return
+    print("depth ", depth, " - ", node.point.get_tuple())
+    print_tree(node.left, depth+1)
+    print_tree(node.right, depth+1)
 
 
 if __name__ == '__main__':
-    # points_set = [(0, 10), (-10, -10), (10, 10), (10, 0), (-10, 0), (0, -10)]
+    points_set = [(0, 10), (-10, -10), (10, 10), (10, 0), (-10, 0), (0, -10)]
     # tree = construct(list(map(Point.point_from_tuple, points_set)))
-    points_set = [(1, 9), (2, 8), (3, 7), (4, 6), (5, 5), (6, 4), (7, 3), (8, 2), (9, 1)]
-    tree = construct(points_set)
+    # points_set = [(1, 9), (2, 8), (3, 7), (4, 6), (5, 5), (6, 4), (7, 3), (8, 2), (9, 1)]
+    kdtree = construct(points_set)
     print(points_set)
     print(len(points_set))
-    s = search(tree, -np.inf, np.inf, -np.inf, np.inf)
+    s = search(kdtree, -np.inf, np.inf, -np.inf, np.inf)
     print(s)
     print(len(s))
 
-    t = report_subtree(tree)
-    print([(p.x, p.y) for p in t])
-    print(len(t))
+    # t = report_subtree(kdtree)
+    # print([(p.x, p.y) for p in t])
+    # print(len(t))
+    # print_tree(kdtree)
