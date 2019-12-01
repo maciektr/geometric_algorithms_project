@@ -6,8 +6,6 @@ class Child(Enum):
     NW = 1
     SE = 2
     SW = 3
-    # SW = 2
-    # SE = 3
 
 
 class Point:
@@ -26,9 +24,8 @@ class Point:
         return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
 
 
-# TODO Test Node
 class Node:
-    def __init__(self, n=100, w=0, s=0, e=100, par=None, type=-1):
+    def __init__(self, n=100, w=0, s=0, e=100, par=None, typ=-1):
         self.parent = par
         self.north = n
         self.west = w
@@ -38,7 +35,7 @@ class Node:
         self.midy = (self.north+self.south)/2
         self.kids = [None for i in range(4)]
         self.point = None
-        self.type = type
+        self.type = typ
         self.kidscount = 0
 
     def add_kid(self, nr, other):
@@ -52,17 +49,21 @@ class Node:
             nr = nr.value
         return self.kids[nr]
 
+    def __str__(self):
+        return 'N: ' + str(self.north) + ' W: ' + str(self.west) + ' S: ' + str(self.south) + ' E: ' + str(self.east) + \
+               ' Kids: ' + str(self.kidscount) + ' Point:' + str(self.point)
+
 
 def create_kids(node, points):
-    if len(points) < 2:
+    if 0 < len(points) < 2:
         node.point = points[0]
-    if len(points) < 1:
+    if len(points) < 2:
         return
 
-    ne = Node(node.north, node.midx, node.midy, node.east, par=node, type=Child.NE.value)
-    nw = Node(node.north, node.west, node.midy, node.midx, par=node, type=Child.NW.value)
-    sw = Node(node.midy, node.west, node.south, node.midx, par=node, type=Child.SW.value)
-    se = Node(node.midy, node.midx, node.south, node.east, par=node, type=Child.SE.value)
+    ne = Node(node.north, node.midx, node.midy, node.east, par=node, typ=Child.NE.value)
+    nw = Node(node.north, node.west, node.midy, node.midx, par=node, typ=Child.NW.value)
+    sw = Node(node.midy, node.west, node.south, node.midx, par=node, typ=Child.SW.value)
+    se = Node(node.midy, node.midx, node.south, node.east, par=node, typ=Child.SE.value)
 
     node.add_kid(Child.NE.value, ne)
     node.add_kid(Child.NW.value, nw)
@@ -80,48 +81,35 @@ def create_kids(node, points):
     create_kids(se, tabse)
 
 
-# TODO Test QuadTree init and neighbours
 class QuadTree:
     def __init__(self, points, n=100, w=0, s=0, e=100):
         self.root = Node(n, w, s, e, None)
         create_kids(self.root, points)
 
-    def south_neighbour(self, node):
-        if node == self.root:
-            return None
-        if node.type in {Child.NE.value, Child.NW.value}:
-            ancestor = node.parent.get_kid(node.type+2)
-            while ancestor.kidscount != 0:
-                ancestor = ancestor.get_kid(node.type)
-            return ancestor
+    def find_points(self, lowerleft, upperright, solution, tree=None):
+        if tree is None:
+            tree = self.root
+        if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
+            return
+        if tree.kidscount==0:
+            if tree.point is not None and tree.point.in_range(lowerleft, upperright):
+                solution.add(tree.point)
+            return
+        for kid in tree.kids:
+            self.find_points(lowerleft, upperright, solution, kid)
 
-        ancestor = self.south_neighbour(node.parent)
-        if ancestor is None or ancestor.kidscount == 0:
-            return ancestor
-        while ancestor.kidscount != 0:
-            ancestor = ancestor.get_kid(node.type-2)
 
-        # if node.type == Child.SE.value:
-        #     while ancestor.kidscount != 0:
-        #         ancestor = ancestor.get_kid(Child.NE.value)
-        #     return ancestor
-        # while ancestor.kidscount != 0:
-        #     ancestor = ancestor.get_kid(Child.NW.value)
-
-    def west_neighbour(self, node):
-        if node == self.root:
-            return None
-        if node.type in {Child.NE.value, Child.SE.value}:
-            ancestor = node.parent.get_kid(node.type+1)
-            while ancestor.kidscount != 0:
-                ancestor = ancestor.get_kid(node.type)
-            return ancestor
-
-        ancestor = self.west_neighbour(node.parent)
-        if ancestor is None or ancestor.kidscount == 0:
-            return ancestor
-        while ancestor.kidscount != 0:
-            ancestor = ancestor.get_kid(node.type-1)
+def druk(quad, depth=0):
+    if quad is None:
+        return
+    print(depth, ': N=', quad.north, ' W=', quad.west, ' S=', quad.south, ' E=', quad.east, ' Type=', quad.type,
+          ' Kids=', quad.kidscount, end='')
+    if quad.point is not None:
+        print(' Point=', quad.point)
+    else:
+        print()
+    for i in quad.kids:
+        druk(i, depth+1)
 
 
 def get_points(_=0):
@@ -136,5 +124,21 @@ pkts = get_points(0)
 for pkt in pkts:
     print(pkt)
 
-# TODO Find points in range -> start upperright and go down from each left neighbour until out of range
+quad = QuadTree(pkts)
+#druk(quad.root)
+
+
+lowerleft = Point(50, 0)
+upperright = Point(75, 100)
+
+solution = set([])
+quad.find_points(lowerleft, upperright, solution)
+
+print('Solution:')
+for point in solution:
+    print(point)
+print(len(solution))
+
+# TODO Better input
+# TODO Visualization
 
