@@ -1,5 +1,5 @@
 from enum import Enum
-
+import numpy as np
 
 class Child(Enum):
     NE = 0
@@ -22,6 +22,9 @@ class Point:
 
     def in_range(self, lowerleft, upperright):
         return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
+
+    def get_tuple(self):
+        return tuple([self.x,   self.y])
 
 
 class Node:
@@ -86,7 +89,7 @@ class QuadTree:
         self.root = Node(n, w, s, e, None)
         create_kids(self.root, points)
 
-    def find_points(self, lowerleft, upperright, solution, tree=None):
+    def _find_points(self, lowerleft, upperright, solution, tree=None):
         if tree is None:
             tree = self.root
         if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
@@ -96,7 +99,19 @@ class QuadTree:
                 solution.add(tree.point)
             return
         for kid in tree.kids:
-            self.find_points(lowerleft, upperright, solution, kid)
+            self._find_points(lowerleft, upperright, solution, kid)
+
+    def find_points(self, lowerleft, upperright):
+        solution = set([])
+        self._find_points(lowerleft,upperright,solution)
+        return solution
+
+    def find(self, x_low = -np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):
+        lowerleft = Point(x_low, y_low)
+        upperright = Point(x_high, y_high)
+        p = self.find_points(lowerleft, upperright)
+        # print(p)
+        return list(map(Point.get_tuple, p))
 
 
 def druk(quad, depth=0):
