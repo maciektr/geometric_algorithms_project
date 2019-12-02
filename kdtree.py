@@ -1,9 +1,8 @@
 import numpy as np
 from point import Point
 from scope import Scope
-import visualiser
-import generator
-
+# import generator
+import simple_visualiser
 
 class Node:
     def __init__(self, p, left=None, right=None):
@@ -106,13 +105,15 @@ def construct(points):
 if __name__ == '__main__':
     points_set = [(0, 10), (-10, -10), (10, 10), (10, 0), (-10, 0), (0, -10)]
     # points_set = [(1, 9), (2, 8), (3, 7), (4, 6), (5, 5), (6, 4), (7, 3), (8, 2), (9, 1)]
-    plot = visualiser.Plot([visualiser.PointsCollection(points_set)])
 
     kdtree = construct(points_set)
     s = search(kdtree, x_low=-2, x_high=2)
     print(s)
 
-    plot.points.append(visualiser.PointsCollection(s, color='green'))
+    plot = simple_visualiser.Plot([simple_visualiser.PointsCollection(points_set),
+                     simple_visualiser.PointsCollection(s, 'red', marker="x")])
     plot.draw()
+
+
     # print_tree(kdtree)
     # nie dziala xD
