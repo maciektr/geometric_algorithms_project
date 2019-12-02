@@ -120,24 +120,25 @@ def get_points(_=0):
         return []
 
 
-pkts = get_points(0)
-for pkt in pkts:
-    print(pkt)
+if __name__=='__main__':
+    pkts = get_points(0)
+    for pkt in pkts:
+        print(pkt)
 
-quad = QuadTree(pkts)
-#druk(quad.root)
+    quad = QuadTree(pkts)
+    #druk(quad.root)
 
 
-lowerleft = Point(50, 0)
-upperright = Point(75, 100)
+    lowerleft = Point(0, 0)
+    upperright = Point(100, 100)
 
-solution = set([])
-quad.find_points(lowerleft, upperright, solution)
+    solution = set([])
+    quad.find_points(lowerleft, upperright, solution)
 
-print('Solution:')
-for point in solution:
-    print(point)
-print(len(solution))
+    print('Solution:')
+    for point in solution:
+        print(point)
+    print(len(solution))
 
 # TODO Better input
 # TODO Visualization
