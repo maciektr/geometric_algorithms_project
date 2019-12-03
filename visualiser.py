@@ -1,3 +1,11 @@
+#########################################
+#      Algorytmy Grafowe 2019/2020      #
+#      Wizualizator w matplotlib        #
+#          Krzysztof Podsiadlo          #
+# https://github.com/Podsiadlo/GoGUI2/  #
+#########################################
+
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.collections as mcoll
