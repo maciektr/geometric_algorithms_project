@@ -1,31 +1,30 @@
 from enum import Enum
 
 
-class Child(Enum):
+class Child(Enum):  # enumeracja, dla łatwiejszego zarządzania synami node'a
     NE = 0
     NW = 1
     SE = 2
     SW = 3
 
 
-class Point:
-    nr = 0
-
-    def __init__(self, x, y):
+class Point:  # Klasa, dla łatwiejszego zarządzania punktami
+    def __init__(self, x, y):  # Inicjalizacja punktów
         self.x = x
         self.y = y
-        self.nr = Point.nr
-        Point.nr += 1
 
-    def __str__(self):
-        return str(self.nr) + ':' + ' (' + str(self.x) + ', ' + str(self.y) + ')'
+    def __str__(self):  # Wypisywanie w sensowny sposób
+        return ':' + ' (' + str(self.x) + ', ' + str(self.y) + ')'
 
-    def in_range(self, lowerleft, upperright):
+    def in_range(self, lowerleft, upperright):  # sprawdzenie czy punkt znajduje się w zadanym obszarze
         return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
 
 
-class Node:
-    def __init__(self, n=100, w=0, s=0, e=100, par=None, typ=-1):
+class Node:  # Klasa, dla łatwiejszego zarządzania konkretnymi node'ami qudatree
+    # Dla każdego node'a pamiętamy obszar jaki on obejmuje, wartości ułatwiające podział noda na 4 dzieci
+    # Lista dzieci i licznik pamiętający ich liczbę dla łatwiejszego zarządzania
+    # Punkt, jeżeli jesteśmy w liściu  i akurat jakiś Point znajduje się w naszym obszarze
+    def __init__(self, n=100, w=0, s=0, e=100, par=None, typ=-1):  # Inicjalizacja node'a
         self.parent = par
         self.north = n
         self.west = w
@@ -38,23 +37,23 @@ class Node:
         self.type = typ
         self.kidscount = 0
 
-    def add_kid(self, nr, other):
+    def add_kid(self, nr, other):  # Metoda dodająca konkretne dziecko danemu node'owi i zwiększające licznik dzieci
         if type(nr) != int:
             nr = nr.value
         self.kids[nr] = other
         self.kidscount += 1
 
-    def get_kid(self, nr):
+    def get_kid(self, nr):  # Metoda zwracająca konkretne dziecko danego node'a
         if type(nr) != int:
             nr = nr.value
         return self.kids[nr]
 
-    def __str__(self):
+    def __str__(self):  # Wypisywania w sensowny sposób
         return 'N: ' + str(self.north) + ' W: ' + str(self.west) + ' S: ' + str(self.south) + ' E: ' + str(self.east) + \
                ' Kids: ' + str(self.kidscount) + ' Point:' + str(self.point)
 
 
-def create_kids(node, points):
+def create_kids(node, points):  # Funkcja, konieczna przy inicjalizacji quadtree, dzieląca punkty i tworząca node'y
     if 0 < len(points) < 2:
         node.point = points[0]
     if len(points) < 2:
@@ -81,7 +80,7 @@ def create_kids(node, points):
     create_kids(se, tabse)
 
 
-def _get_lines(node, sol):
+def _get_lines(node, sol):  # Funkcja konieczna przy wizualizacji, aby wyświetlić obszary obejmowane przez liście
     if node.kidscount!=0:
         _get_lines(node.get_kid(Child.NE.value), sol)
         _get_lines(node.get_kid(Child.NW.value), sol)
@@ -94,8 +93,8 @@ def _get_lines(node, sol):
         sol += [[(node.east, node.south), (node.east, node.north)]]
 
 
-class QuadTree:
-    def __init__(self, points, n=100, w=0, s=0, e=100):
+class QuadTree:  # Klasa, dla łatiwejszego zarządzania quadtree
+    def __init__(self, points, n=100, w=0, s=0, e=100):  # Inicjalizacja quadtree, stworzenie drzewa i pamiętanie root'a
         self.root = Node(n, w, s, e, None)
         create_kids(self.root, points)
 
@@ -111,7 +110,7 @@ class QuadTree:
         for kid in tree.kids:
             self.find_points(lowerleft, upperright, solution, kid)
 
-    def get_lines(self):
+    def get_lines(self):  # Funkcja zewnętrzna dla ładniejszeg formatu zwracająca linie potrzebne do wizualizacji
         sol = []
         _get_lines(self.root, sol)
         return sol
