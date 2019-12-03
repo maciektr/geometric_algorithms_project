@@ -158,12 +158,13 @@ if __name__=='__main__':
     #druk(quad.root)
 
 
-    lowerleft = Point(0, 0)
-    upperright = Point(100, 100)
+    #lowerleft = Point(0, 0)
+    #upperright = Point(100, 100)
 
-    solution = set([])
-    quad._find_points(lowerleft, upperright, solution)
+    #solution = set([])
+    #quad._find_points(lowerleft, upperright, solution)
 
+    solution = quad.find(0, 100, 0, 100)
     print('Solution:')
     for point in solution:
         print(point)
