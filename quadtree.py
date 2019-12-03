@@ -81,6 +81,19 @@ def create_kids(node, points):
     create_kids(se, tabse)
 
 
+def _get_lines(node, sol):
+    if node.kidscount!=0:
+        _get_lines(node.get_kid(Child.NE.value), sol)
+        _get_lines(node.get_kid(Child.NW.value), sol)
+        _get_lines(node.get_kid(Child.SE.value), sol)
+        _get_lines(node.get_kid(Child.SW.value), sol)
+    else:
+        sol += [[(node.east, node.north), (node.west, node.north)]]
+        sol += [[(node.west, node.north), (node.west, node.south)]]
+        sol += [[(node.west, node.south), (node.east, node.south)]]
+        sol += [[(node.east, node.south), (node.east, node.north)]]
+
+
 class QuadTree:
     def __init__(self, points, n=100, w=0, s=0, e=100):
         self.root = Node(n, w, s, e, None)
@@ -97,6 +110,11 @@ class QuadTree:
             return
         for kid in tree.kids:
             self.find_points(lowerleft, upperright, solution, kid)
+
+    def get_lines(self):
+        sol = []
+        _get_lines(self.root, sol)
+        return sol
 
 
 def druk(quad, depth=0):
@@ -139,6 +157,12 @@ if __name__=='__main__':
     for point in solution:
         print(point)
     print(len(solution))
+
+    lines = quad.get_lines()
+
+    print('Lines:')
+    for line in lines:
+        print(line)
 
 # TODO Better input
 # TODO Visualization
