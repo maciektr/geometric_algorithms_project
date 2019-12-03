@@ -162,7 +162,7 @@ if __name__=='__main__':
     upperright = Point(100, 100)
 
     solution = set([])
-    quad.find_points(lowerleft, upperright, solution)
+    quad._find_points(lowerleft, upperright, solution)
 
     print('Solution:')
     for point in solution:
