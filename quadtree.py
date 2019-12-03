@@ -132,6 +132,11 @@ class QuadTree:  # Klasa, dla łatiwejszego zarządzania quadtree
         _get_lines(self.root, sol)
         return sol
 
+    def get_lines(self):  # Funkcja zwracająca linie potrzebne do wizualizacji
+        sol = []
+        _get_lines(self.root, sol)
+        return sol
+
 
 def druk(quad, depth=0):  # Funkcja przydatna przy debugowaniu, drukująca całe quadtree w miarę czytelny sposób
     if quad is None:
