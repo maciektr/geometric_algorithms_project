@@ -1,34 +1,34 @@
 from enum import Enum
 import numpy as np
 
-class Child(Enum):
+
+class Child(Enum):  # enumeracja, dla łatwiejszego zarządzania synami node'a
     NE = 0
     NW = 1
     SE = 2
     SW = 3
 
 
-class Point:
-    nr = 0
-
-    def __init__(self, x, y):
+class Point:  # Klasa, dla łatwiejszego zarządzania punktami
+    def __init__(self, x, y):  # Inicjalizacja punktów
         self.x = x
         self.y = y
-        self.nr = Point.nr
-        Point.nr += 1
 
-    def __str__(self):
-        return str(self.nr) + ':' + ' (' + str(self.x) + ', ' + str(self.y) + ')'
+    def __str__(self):  # Wypisywanie w sensowny sposób
+        return ':' + ' (' + str(self.x) + ', ' + str(self.y) + ')'
 
-    def in_range(self, lowerleft, upperright):
+    def in_range(self, lowerleft, upperright):  # sprawdzenie czy punkt znajduje się w zadanym obszarze
         return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
 
-    def get_tuple(self):
+    def get_tuple(self):  # zwracanie punkty w formacie przyjmowanym przez wizualizację
         return tuple([self.x,   self.y])
 
 
-class Node:
-    def __init__(self, n=100, w=0, s=0, e=100, par=None, typ=-1):
+class Node:  # Klasa, dla łatwiejszego zarządzania konkretnymi node'ami qudatree
+    # Dla każdego node'a pamiętamy obszar jaki on obejmuje, wartości ułatwiające podział noda na 4 dzieci
+    # Lista dzieci i licznik pamiętający ich liczbę dla łatwiejszego zarządzania
+    # Punkt, jeżeli jesteśmy w liściu  i akurat jakiś Point znajduje się w naszym obszarze
+    def __init__(self, n=100, w=0, s=0, e=100, par=None, typ=-1):  # Inicjalizacja node'a
         self.parent = par
         self.north = n
         self.west = w
@@ -41,23 +41,23 @@ class Node:
         self.type = typ
         self.kidscount = 0
 
-    def add_kid(self, nr, other):
+    def add_kid(self, nr, other):  # Metoda dodająca konkretne dziecko danemu node'owi i zwiększające licznik dzieci
         if type(nr) != int:
             nr = nr.value
         self.kids[nr] = other
         self.kidscount += 1
 
-    def get_kid(self, nr):
+    def get_kid(self, nr):  # Metoda zwracająca konkretne dziecko danego node'a
         if type(nr) != int:
             nr = nr.value
         return self.kids[nr]
 
-    def __str__(self):
+    def __str__(self):  # Wypisywania w sensowny sposób
         return 'N: ' + str(self.north) + ' W: ' + str(self.west) + ' S: ' + str(self.south) + ' E: ' + str(self.east) + \
                ' Kids: ' + str(self.kidscount) + ' Point:' + str(self.point)
 
 
-def create_kids(node, points):
+def create_kids(node, points):  # Funkcja, konieczna przy inicjalizacji quadtree, dzieląca punkty i tworząca node'y
     if 0 < len(points) < 2:
         node.point = points[0]
     if len(points) < 2:
@@ -84,12 +84,25 @@ def create_kids(node, points):
     create_kids(se, tabse)
 
 
-class QuadTree:
-    def __init__(self, points, n=100, w=0, s=0, e=100):
+def _get_lines(node, sol):  # Funkcja konieczna przy wizualizacji, aby wyświetlić obszary obejmowane przez liście
+    if node.kidscount!=0:
+        _get_lines(node.get_kid(Child.NE.value), sol)
+        _get_lines(node.get_kid(Child.NW.value), sol)
+        _get_lines(node.get_kid(Child.SE.value), sol)
+        _get_lines(node.get_kid(Child.SW.value), sol)
+    else:
+        sol += [[(node.east, node.north), (node.west, node.north)]]
+        sol += [[(node.west, node.north), (node.west, node.south)]]
+        sol += [[(node.west, node.south), (node.east, node.south)]]
+        sol += [[(node.east, node.south), (node.east, node.north)]]
+
+
+class QuadTree:  # Klasa, dla łatiwejszego zarządzania quadtree
+    def __init__(self, points, n=100, w=0, s=0, e=100):  # Inicjalizacja quadtree, stworzenie drzewa i pamiętanie root'a
         self.root = Node(n, w, s, e, None)
         create_kids(self.root, points)
 
-    def _find_points(self, lowerleft, upperright, solution, tree=None):
+    def _find_points(self, lowerleft, upperright, solution, tree=None):  # Funkcja wewnętrzna zwracająca listę pkt
         if tree is None:
             tree = self.root
         if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
@@ -101,20 +114,21 @@ class QuadTree:
         for kid in tree.kids:
             self._find_points(lowerleft, upperright, solution, kid)
 
-    def find_points(self, lowerleft, upperright):
-        solution = set([])
-        self._find_points(lowerleft,upperright,solution)
-        return solution
-
-    def find(self, x_low = -np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):
+    def find(self, x_low=-np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):  # Funkcja zewnętrzna
         lowerleft = Point(x_low, y_low)
         upperright = Point(x_high, y_high)
-        p = self.find_points(lowerleft, upperright)
+        solution = set([])
+        self._find_points(lowerleft, upperright, solution)
         # print(p)
-        return list(map(Point.get_tuple, p))
+        return list(map(Point.get_tuple, solution))
+
+    def get_lines(self):  # Funkcja zwracająca linie potrzebne do wizualizacji
+        sol = []
+        _get_lines(self.root, sol)
+        return sol
 
 
-def druk(quad, depth=0):
+def druk(quad, depth=0):  # Funkcja przydatna przy debugowaniu, drukująca całe quadtree w miarę czytelny sposób
     if quad is None:
         return
     print(depth, ': N=', quad.north, ' W=', quad.west, ' S=', quad.south, ' E=', quad.east, ' Type=', quad.type,
@@ -127,7 +141,7 @@ def druk(quad, depth=0):
         druk(i, depth+1)
 
 
-def get_points(_=0):
+def get_points(_=0):  # Funkcja służąca do uzyskiwania punktów - wykorzystywana przy testowaniu
     if _==0:
         return [Point(0, 0), Point(20, 10), Point(20, 70), Point(60, 10), Point(60, 40), Point(70, 80), Point(75, 90),
                 Point(80, 85), Point(80, 80), Point(80, 83)]
@@ -154,6 +168,12 @@ if __name__=='__main__':
     for point in solution:
         print(point)
     print(len(solution))
+
+    lines = quad.get_lines()
+
+    print('Lines:')
+    for line in lines:
+        print(line)
 
 # TODO Better input
 # TODO Visualization
