@@ -8,6 +8,7 @@
 # Import wykorzystywanych modulow
 from enum import Enum
 import numpy as np
+from simple_geometry import *
 
 
 # Typ wyliczeniowy ulatwiajacy zarzadzanie poddrzewami w wezle drzewa
@@ -16,22 +17,6 @@ class Child(Enum):
     NW = 1
     SE = 2
     SW = 3
-
-
-# TODO: ujednolicic implementacje punktu
-class Point:
-    def __init__(self, x, y):  # Inicjalizacja punktów
-        self.x = x
-        self.y = y
-
-    def __str__(self):  # Wypisywanie w sensowny sposób
-        return ':' + ' (' + str(self.x) + ', ' + str(self.y) + ')'
-
-    def in_range(self, lowerleft, upperright):  # sprawdzenie czy punkt znajduje się w zadanym obszarze
-        return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
-
-    def get_tuple(self):  # zwracanie punkty w formacie przyjmowanym przez wizualizację
-        return tuple([self.x,   self.y])
 
 
 # Klasa reprezentujaca wezel w QuadTree
@@ -123,7 +108,7 @@ class QuadTree:
     # Konstruktor klasy
     # Instancja przechowuje korzen drzewa
     def __init__(self, pkts):
-        points = [Point(x[0], x[1]) for x in pkts]
+        points = [Point(x) for x in pkts]
         _, n = max(pkts, key=lambda x: x[1])
         _, s = min(pkts, key=lambda x: x[1])
         e, _ = max(pkts, key=lambda x: x[0])
@@ -138,7 +123,7 @@ class QuadTree:
         if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
             return
         if tree.kidscount==0:
-            if tree.point is not None and tree.point.in_range(lowerleft, upperright):
+            if tree.point is not None and Scope().from_tuple(lowerleft,upperright).in_scope(tree.point):
                 solution.add(tree.point)
             return
         for kid in tree.kids:
@@ -146,8 +131,8 @@ class QuadTree:
 
     # Funkcja implementujaca algorytm przeszukania QuadTree
     def find(self, x_low=-np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):
-        lowerleft = Point(x_low, y_low)
-        upperright = Point(x_high, y_high)
+        lowerleft = Point((x_low, y_low))
+        upperright = Point((x_high, y_high))
         solution = set([])
         self._find_points(lowerleft, upperright, solution)
         # print(p)
