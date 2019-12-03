@@ -58,9 +58,9 @@ class Node:
 
             if depth % 2 == 0 and self.left == child:
                 new_scope.common(x_high=self.line)
-            elif depth % 2 == 1 and node.left == child:
+            elif depth % 2 == 1 and self.left == child:
                 new_scope.common(y_high=self.line)
-            elif depth % 2 == 0 and node.right == child:
+            elif depth % 2 == 0 and self.right == child:
                 new_scope.common(x_low=self.line)
             else:
                 new_scope.common(y_low=self.line)

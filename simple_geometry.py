@@ -22,6 +22,14 @@ class Scope:
     def __str__(self):
         return '('+str(self.x_low)+', '+str(self.x_high)+', '+str(self.y_low)+', '+str(self.y_high)+')'
 
+    # Funkcja przyjmujaca przedzial jako pare krotek
+    def from_tuple(self, lowerleft, upperright):
+        self.x_low = lowerleft.x
+        self.x_high = upperright.x
+        self.y_low = lowerleft.y
+        self.y_high = upperright.y
+        return self
+
     # Funkcja sprawdzajaca czy punkt podany jako argument nalezy do przechowywanego przedzialu
     def in_scope(self, point):
         return self.x_low <= point.x <= self.x_high and self.y_low <= point.y <= self.y_high
@@ -72,3 +80,7 @@ class Point:
     # Funkcja zwracajaca punkt w postaci dwuelementowej krotki
     def get_tuple(self):
         return tuple([self.x, self.y])
+
+    # Funkcja zwracajaca reprezentacje instancji klasy w formie lancucha znakow
+    def __str__(self):
+        return '(' + str(self.x) + ', ' + str(self.y) + ')'
