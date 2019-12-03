@@ -1,4 +1,5 @@
 from enum import Enum
+import numpy as np
 
 
 class Child(Enum):  # enumeracja, dla łatwiejszego zarządzania synami node'a
@@ -18,6 +19,9 @@ class Point:  # Klasa, dla łatwiejszego zarządzania punktami
 
     def in_range(self, lowerleft, upperright):  # sprawdzenie czy punkt znajduje się w zadanym obszarze
         return lowerleft.x <= self.x <= upperright.x and lowerleft.y <= self.y <= upperright.y
+
+    def get_tuple(self):  # zwracanie punkty w formacie przyjmowanym przez wizualizację
+        return tuple([self.x,   self.y])
 
 
 class Node:  # Klasa, dla łatwiejszego zarządzania konkretnymi node'ami qudatree
@@ -94,11 +98,16 @@ def _get_lines(node, sol):  # Funkcja konieczna przy wizualizacji, aby wyświetl
 
 
 class QuadTree:  # Klasa, dla łatiwejszego zarządzania quadtree
-    def __init__(self, points, n=100, w=0, s=0, e=100):  # Inicjalizacja quadtree, stworzenie drzewa i pamiętanie root'a
+    def __init__(self, pkts):  # Inicjalizacja quadtree, stworzenie drzewa i pamiętanie root'a
+        points = [Point(x[0], x[1]) for x in pkts]
+        _, n = max(pkts, key=lambda x: x[1])
+        _, s = min(pkts, key=lambda x: x[1])
+        e, _ = max(pkts, key=lambda x: x[0])
+        w, _ = min(pkts, key=lambda x: x[0])
         self.root = Node(n, w, s, e, None)
         create_kids(self.root, points)
 
-    def find_points(self, lowerleft, upperright, solution, tree=None):
+    def _find_points(self, lowerleft, upperright, solution, tree=None):  # Funkcja wewnętrzna zwracająca listę pkt
         if tree is None:
             tree = self.root
         if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
@@ -108,15 +117,23 @@ class QuadTree:  # Klasa, dla łatiwejszego zarządzania quadtree
                 solution.add(tree.point)
             return
         for kid in tree.kids:
-            self.find_points(lowerleft, upperright, solution, kid)
+            self._find_points(lowerleft, upperright, solution, kid)
 
-    def get_lines(self):  # Funkcja zewnętrzna dla ładniejszeg formatu zwracająca linie potrzebne do wizualizacji
+    def find(self, x_low=-np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):  # Funkcja zewnętrzna, zwracająca listę
+        lowerleft = Point(x_low, y_low)                                          # punktów w będących w zadanym obszarze
+        upperright = Point(x_high, y_high)
+        solution = set([])
+        self._find_points(lowerleft, upperright, solution)
+        # print(p)
+        return list(map(Point.get_tuple, solution))
+
+    def get_lines(self):  # Funkcja zwracająca linie potrzebne do wizualizacji
         sol = []
         _get_lines(self.root, sol)
         return sol
 
 
-def druk(quad, depth=0):
+def druk(quad, depth=0):  # Funkcja przydatna przy debugowaniu, drukująca całe quadtree w miarę czytelny sposób
     if quad is None:
         return
     print(depth, ': N=', quad.north, ' W=', quad.west, ' S=', quad.south, ' E=', quad.east, ' Type=', quad.type,
@@ -129,10 +146,11 @@ def druk(quad, depth=0):
         druk(i, depth+1)
 
 
-def get_points(_=0):
+def get_points(_=0):  # Funkcja służąca do uzyskiwania punktów - wykorzystywana przy testowaniu
     if _==0:
-        return [Point(0, 0), Point(20, 10), Point(20, 70), Point(60, 10), Point(60, 40), Point(70, 80), Point(75, 90),
-                Point(80, 85), Point(80, 80), Point(80, 83)]
+        # return [Point(0, 0), Point(20, 10), Point(20, 70), Point(60, 10), Point(60, 40), Point(70, 80), Point(75, 90),
+        #         Point(80, 85), Point(80, 80), Point(80, 83)]
+        return [(0, 0), (20, 10), (20, 70), (60, 10), (60, 40), (70, 80), (75, 90), (80, 85), (80, 80), (80, 83)]
     else:
         return []
 
@@ -145,13 +163,7 @@ if __name__=='__main__':
     quad = QuadTree(pkts)
     #druk(quad.root)
 
-
-    lowerleft = Point(0, 0)
-    upperright = Point(100, 100)
-
-    solution = set([])
-    quad.find_points(lowerleft, upperright, solution)
-
+    solution = quad.find(0, 100, 0, 100)
     print('Solution:')
     for point in solution:
         print(point)
@@ -159,9 +171,9 @@ if __name__=='__main__':
 
     lines = quad.get_lines()
 
-    print('Lines:')
-    for line in lines:
-        print(line)
+    #print('Lines:')
+    #for line in lines:
+    #    print(line)
 
 # TODO Better input
 # TODO Visualization
