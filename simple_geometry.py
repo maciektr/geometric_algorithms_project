@@ -22,6 +22,10 @@ class Scope:
     def __str__(self):
         return '('+str(self.x_low)+', '+str(self.x_high)+', '+str(self.y_low)+', '+str(self.y_high)+')'
 
+    # Funkcja zwracajaca reprezentowany obszar jako pare krotek reprezentujacych wierzcholki prostokata
+    def get_tuple(self):
+        return [tuple([self.x_low, self.y_low]),tuple([self.x_high, self.y_high])]
+
     # Funkcja przyjmujaca przedzial jako pare krotek
     def from_tuple(self, lowerleft, upperright):
         self.x_low = lowerleft.x

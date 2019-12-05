@@ -1,6 +1,6 @@
 #########################################
 #      Algorytmy Grafowe 2019/2020      #
-#               QuadTree                #
+#               Quadtree                #
 #          Stanislaw Denkowski          #
 #          Maciej Tratnowiecki          #
 #########################################
@@ -19,7 +19,7 @@ class Child(Enum):
     SW = 3
 
 
-# Klasa reprezentujaca wezel w QuadTree
+# Klasa reprezentujaca wezel w Quadtree
 class Node:
     # Konstruktor klasy
     # Kazdy wezel przechowuje:
@@ -60,7 +60,7 @@ class Node:
                ' Kids: ' + str(self.kidscount) + ' Point:' + str(self.point)
 
 
-# Funkcja wykorzystywana przy inicjalizacji QuadTree
+# Funkcja wykorzystywana przy inicjalizacji Quadtree
 # Dzieli punkty i tworzy wezly
 def create_kids(node, points):
     if 0 < len(points) < 2:
@@ -103,8 +103,8 @@ def _get_lines(node, sol):
         sol += [[(node.east, node.south), (node.east, node.north)]]
 
 
-# Klasa enkapsulujaca implementacje QuadTree
-class QuadTree:
+# Klasa enkapsulujaca implementacje Quadtree
+class Quadtree:
     # Konstruktor klasy
     # Instancja przechowuje korzen drzewa
     def __init__(self, pkts):
@@ -129,7 +129,7 @@ class QuadTree:
         for kid in tree.kids:
             self._find_points(lowerleft, upperright, solution, kid)
 
-    # Funkcja implementujaca algorytm przeszukania QuadTree
+    # Funkcja implementujaca algorytm przeszukania Quadtree
     def find(self, x_low=-np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):
         lowerleft = Point((x_low, y_low))
         upperright = Point((x_high, y_high))
@@ -145,9 +145,9 @@ class QuadTree:
         return sol
 
 
-# Funkcja wypisujaca tekstowa reprezentacje stanu QuadTree
+# Funkcja wypisujaca tekstowa reprezentacje stanu Quadtree
 # Nie jest wykorzystywana w implementacji drzewa
-def druk(quad, depth=0):
+def print_tree(quad, depth=0):
     if quad is None:
         return
     print(depth, ': N=', quad.north, ' W=', quad.west, ' S=', quad.south, ' E=', quad.east, ' Type=', quad.type,
@@ -157,7 +157,7 @@ def druk(quad, depth=0):
     else:
         print()
     for i in quad.kids:
-        druk(i, depth+1)
+        print_tree(i, depth+1)
 
 
 # Ponizszy kod nie jest wykorzystywany w implementacji drzewa
@@ -166,7 +166,7 @@ if __name__=='__main__':
     for pkt in pkts:
         print(pkt)
 
-    quad = QuadTree(pkts)
+    quad = Quadtree(pkts)
     solution = quad.find(0, 100, 0, 100)
     print('Solution:')
     for point in solution:
