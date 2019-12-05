@@ -14,7 +14,7 @@ from random import randint
 if __name__=='__main__':
     test = generator.generate_points(100)
     kd = kdtree.Kdtree(test)
-    quad = quadtree.QuadTree(test)
+    quad = quadtree.Quadtree(test)
 
     v = 1000
     while True:

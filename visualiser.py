@@ -57,7 +57,7 @@ class PointsCollection:
 class LinesCollection:
     def __init__(self, lines=[], color=None):
         self.color = color
-        self.lines = lines
+        self.lines = lines[:]
 
     def add(self, line):
         self.lines.append(line)
@@ -93,7 +93,7 @@ class Plot:
         callback = _Button_callback(self.scenes)
         self.widgets = self.__configure_buttons(callback)
         callback.set_axis(plt.axes())
-        plt.show()
+        # plt.show()
         callback.draw()
 
     def toJSON(self):
@@ -112,3 +112,45 @@ if __name__ == '__main__':
 
     plot = Plot(scenes)
     plot.draw()
+
+
+#########################################
+#      Algorytmy Grafowe 2019/2020      #
+#        Wizualizator KD-drzewa         #
+#          Stanislaw Denkowski          #
+#          Maciej Tratnowiecki          #
+#########################################
+
+
+class KdtreeVisualiser:
+    def __init__(self):
+        self.points = []
+        self.lines = []
+        self.scenes = []
+        self.rects = []
+        self.res = []
+
+    def put_points(self, points):
+        self.points = points
+        self.scenes.append(Scene([PointsCollection(self.points)]))
+
+    def add_line(self, line, mark_points):
+        self.lines.append(line)
+        self.scenes.append(Scene([PointsCollection(self.points), PointsCollection(mark_points, 'orange')],
+                                 [LinesCollection(self.lines)]
+                                 ))
+
+    def get_scenes(self):
+        res = []
+        res, self.scenes = self.scenes, res
+        return res
+
+    def add_search(self, scope, res=None):
+        lowerleft, upperright = scope.get_tuple()
+        upperleft = (lowerleft[0], upperright[1])
+        lowerright = (upperright[0], lowerleft[1])
+        self.rects += [[lowerleft,upperleft],[lowerright,upperright],[lowerleft,lowerright],[upperleft,upperright]]
+        if res is not None:
+            self.res += res
+        self.scenes.append(Scene([PointsCollection(self.points), PointsCollection(self.res, 'red', marker='x')],
+                                 [LinesCollection(self.rects), LinesCollection(self.rects[-4:],color='orange')]))
