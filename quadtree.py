@@ -60,9 +60,12 @@ class Node:
                ' Kids: ' + str(self.kidscount) + ' Point:' + str(self.point)
 
 
+def createsquare(lowx, highx, lowy, highy, lines):
+    lines.append([[(lowx,lowy),(lowx,highy)],[(highx,lowy),(highx,highy)],[(lowx,lowy),(highx,lowy)],[(lowx,highy),(highx,highy)]])
+
 # Funkcja wykorzystywana przy inicjalizacji Quadtree
 # Dzieli punkty i tworzy wezly
-def create_kids(node, points):
+def create_kids(node, points, listoflines):
     if 0 < len(points) < 2:
         node.point = points[0]
     if len(points) < 2:
@@ -83,10 +86,14 @@ def create_kids(node, points):
     tabsw = [point for point in points if point.x<=node.midx and point.y<=node.midy]
     tabse = [point for point in points if point.x>node.midx and point.y<=node.midy]
 
-    create_kids(ne, tabne)
-    create_kids(nw, tabnw)
-    create_kids(sw, tabsw)
-    create_kids(se, tabse)
+    createsquare(ne.west, ne.east, ne.south, ne.north, listoflines)
+    create_kids(ne, tabne, listoflines)
+    createsquare(nw.west, nw.east, nw.south, nw.north, listoflines)
+    create_kids(nw, tabnw, listoflines)
+    createsquare(sw.west, sw.east, sw.south, sw.north, listoflines)
+    create_kids(sw, tabsw, listoflines)
+    createsquare(se.west, se.east, se.south, se.north, listoflines)
+    create_kids(se, tabse, listoflines)
 
 
 # Funkcja konieczna przy wizualizacji, aby wyświetlić obszary obejmowane przez liście
@@ -114,29 +121,33 @@ class Quadtree:
         e, _ = max(pkts, key=lambda x: x[0])
         w, _ = min(pkts, key=lambda x: x[0])
         self.root = Node(n, w, s, e, None)
-        create_kids(self.root, points)
+        listoflines=[]
+        create_kids(self.root, points, listoflines)
+        self.linesinit=listoflines
 
     # Funkcja pomocnicza realizujaca przeszukiwanie obszaru
-    def _find_points(self, lowerleft, upperright, solution, tree=None):
+    def _find_points(self, lowerleft, upperright, solution, tree=None, listoflines=[]):
         if tree is None:
             tree = self.root
         if lowerleft.x > tree.east or lowerleft.y > tree.north or upperright.x < tree.west or upperright.y < tree.south:
             return
+        createsquare(tree.west, tree.east, tree.south, tree.north, listoflines)
         if tree.kidscount==0:
             if tree.point is not None and Scope().from_tuple(lowerleft,upperright).in_scope(tree.point):
                 solution.add(tree.point)
             return
         for kid in tree.kids:
-            self._find_points(lowerleft, upperright, solution, kid)
+            self._find_points(lowerleft, upperright, solution, kid, listoflines=listoflines)
 
     # Funkcja implementujaca algorytm przeszukania Quadtree
     def find(self, x_low=-np.inf, x_high=np.inf, y_low=-np.inf, y_high=np.inf):
         lowerleft = Point((x_low, y_low))
         upperright = Point((x_high, y_high))
         solution = set([])
-        self._find_points(lowerleft, upperright, solution)
+        listoflines=[]
+        self._find_points(lowerleft, upperright, solution,listoflines=listoflines)
         # print(p)
-        return list(map(Point.get_tuple, solution))
+        return list(map(Point.get_tuple, solution)), listoflines
 
     # Funkcja pomocnicza wykorzystywana przy wizualizacji
     def get_lines(self):
