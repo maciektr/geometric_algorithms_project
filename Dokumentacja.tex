@@ -1,0 +1,449 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{polski}
+\usepackage{geometry}
+\usepackage{mathabx}
+\usepackage{tikz}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{subfig}
+\usepackage{hyperref}
+\usepackage{pdfpages}
+\usepackage{siunitx}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{placeins}
+\usepackage{pdflscape}
+\usepackage{multicol}
+\usepackage{dirtytalk}
+\usepackage{listings}
+
+\title{Wyszukiwanie geometryczne\\
+Przeszukiwanie obszarów ortogonalnych \\
+QuadTree i KD-Drzewa\\
+Dokumentacja techniczna projektu}
+\author{Stanisław Denkowski \\ Maciej Trątnowiecki}
+\date{Grudzień 2019}
+
+\geometry{https://www.overleaf.com/project/5de7b1d279fb5c000131ec2b
+a4paper,
+total={170mm,257mm},https://www.overleaf.com/project/5de7b1d279fb5c000131ec2b
+left=20mm,
+top=20mm
+}
+
+%Korzystanie:
+%	Inicjalizujemy Quadtree z parametrem będącym listą tupli, każda krotka odpowiada punktowi.
+%	Na wcześniej zainicjalizowanym drzewie wywołujemy metodę find z 4 parametrami typu numerycznego, odpowiednio dolne ograniczenie x, górne ograniczenie x, dolne ograniczenie y, górne ograniczenie y. Funkcja zwraca listę tupli, każda krotka odpowiada punktom znajdującym się w zadanym obszarze.
+
+\begin{document}
+
+    \maketitle
+    
+    \section{Wprowadzenie}
+        W ramach projektu zaliczeniowego przygotowaliśmy implementację struktur KD-Tree i QuadTree pozwalających na przeszukiwanie statycznego zbioru punktów w dwuwymiarowej przestrzeni euklidesowej. Obie implementacje pozwalają na inicjalizację struktury statycznym zbiorem punktow, oraz wyszukiwanie wszystkich punktów należących do zadanego obszaru ortogonalnego.
+        
+    \section{Podstawowe informacje techniczne}
+        Implementacje struktur przygotowano w języku python. Pakiet składa się z modułów implementujących omawiane struktury - o odpowiadających im nazwach \say{quadtree.py}, oraz \say{kdtree.py}.
+        Dodatkowo zaimplementowano moduł pomocniczy - \say{simple\_geometry.py} wykorzystywany przez powyższe, a także \say{generator.py} odpowiadający za dostarczanie danych testowych, oraz \say{test.py} realizujący losowe, intergracyjne testy automatyczne. \\
+        
+        W celu wizualizacji zasady działania algorytmów, dla celów dydaktycznych, wykorzystano moduł \say{visualiser.py} przygotowany przez mgr inż. Krzysztofa Podsiadło, a także przygotowano notebook \say{visualiser.ipynb}.\\
+        
+        W czasie pracy wykorzystywaliśmy wirtualne środowisko condy, którego konfiguracja została zawarta w pliku \say{env.yml}. Korzystanie z tego środowiska nie jest jednak wymagane do użycia implementacji. Lista pakietów wymagających instalacji została zawarta w pliku \say{REQUIREMENTS.txt}. Rozpiska wszystkich wymaganych modułów została wymieniona w poniższym dokumencie. \\
+        
+        Projekt znajduje się na githubie: \url{https://github.com/maciektr/geometric_algorithms_project}
+    
+        \subsection{Wymagane pakiety}
+            Dla poprawnego działania oprogramowania wymagane jest uruchomienie modułów w środowisku uruchomieniowym zawierającym poniższe moduły.
+            \begin{multicols}{3}
+                \begin{itemize}
+                    \item quadtree
+                        \begin{itemize}
+                            \item simple\_geometry
+                            \item numpy
+                            \item enum
+                        \end{itemize}
+                    \item kdtree
+                        \begin{itemize}
+                            \item simple\_geometry
+                            \item numpy
+                        \end{itemize}
+                    \item simple\_geometry
+                        \begin{itemize}
+                            \item numpy
+                        \end{itemize}
+                \columnbreak
+                    \item test
+                        \begin{itemize}
+                            \item simple\_geometry
+                            \item kdtree
+                            \item quadtree
+                            \item random
+                            \item generator
+                        \end{itemize}
+                    \item generator
+                        \begin{itemize}
+                            \item random
+                        \end{itemize}
+                    \item visualiser
+                        \begin{itemize}
+                            \item matplotlib
+                            \item numpy
+                            \item json
+                        \end{itemize}
+                    \end{itemize}
+            \end{multicols}
+            
+    \section{QuadTree}
+        \textbf{Moduł: quadtree}
+        \subsection{Struktura modułu}
+            Moduł implementuje klasy:
+            \begin{itemize}
+                \item Quadtree - enkapsulującą implementację drzewa
+                \item Node - reprezentującą węzeł drzewa
+                \item Child - pomocniczego typu wyliczeniowego
+            \end{itemize}
+            A także funkcje:
+            \begin{itemize}
+                \item create\_kids(node, points, listoflines)\\
+                    \textbf{Argumenty:} \begin{itemize}
+                        \item node - Aktualnie rozpatrywany węzeł quadtree, klasy quadtree.Node.
+                        \item points - Zbiór punktów do podziału, klasy simple\_geometry.Point.
+                        \item listoflines - Lista list odcinków, przydatna przy wizualizacji. List.
+                    \end{itemize}\\
+                    \textbf{Wartość zwracana:} brak.\\
+                    Funkcja nie jest przewidziana jako część interfejsu publicznego modułu.\\
+                    Wykorzystywana przy konstrukcji drzewa. Dzieli punkty i tworzy odpowiadające temu podziałowi węzły. 
+                
+                \item \_get\_lines(node, sol)\\
+                    \textbf{Argumenty:} \begin{itemize}
+                        \item node - Aktualnie rozpatrywany węzeł quadtree, klasy quadtree.Node.
+                        \item sol - Przekazywana przez referencję lista odcinków przydatnych przy wizualizacji.
+                    \end{itemize}\\
+                    \textbf{Wartość zwracana:} brak.\\
+                    Funkcja wykorzystywana przy tworzeniu wizualizacji drzewa.
+                
+                \item print\_tree(quad, depth)\\
+                    \textbf{Argumenty:} \begin{itemize}
+                            \item quad - Aktualnie rozpatrywany węzeł quadtree, klasy quadtree.Node.
+                            \item depth - Głębokość, na jakiej znajduje się aktualnie przetwarzany węzeł drzewa, liczba naturalna.
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.\\
+                    Funkcja wypisująca tekstową reprezentację drzewa na standardowe wyjście.
+            \end{itemize}
+            
+        \subsection{Klasa Quadtree}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self, pkts)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item pkts - Lista, zawierająca statyczny zbiór punktów z płaszczyzny dwuwymiarowej we współrzędnych euklidesowych, reprezentowanych jako dwuelementowy krotki pierwszej i drugiej współrzędnej.  
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.\\
+                        \textbf{Złożoność: } O((d+1)n), dla d - głębokość drzewa i n - liczba punktów
+                    
+                    \item find(self,x\_low, x\_high, y\_low, y\_high)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item x\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi odciętych, liczba całkowita. 
+                                \item x\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi odciętych, liczba całkowita. 
+                                \item y\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi rzędnych, liczba całkowita. 
+                                \item y\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi rzędnych, liczba całkowita. 
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} Lista dwuelementowych krotek liczb całkowitych, zawierająca zbiór punktów przechowywanych w drzewie, należących do zadanego przez argumenty funkcji przedziału.\\
+                        Dodatkowo zwracana jest lista list odcinków przydatna przy wizualizacji przeszukiwania obszaru.
+                        \\
+                        \textbf{Złożoność:} O(dl), dla d - głębokość drzewa i l - liczba liści obejmujących obszar nierozłączny z zadanym.\\
+                        Funkcja odwołuje się do wewnętrznej funkcji realizującej przeszukanie Quadtree, stanowiąc dla niej wygodny dla użytkownika interfejs publiczny. 
+                        
+                    \item \_find\_points(self, lowerleft, upperright, solution, tree, listoflines)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item lowerleft - Lewy dolny wierzchołek przeszukiwanego obszaru prostokątnego, dwuelementowa krotka liczb
+                                całkowitych. 
+                                \item upperright - Prawy górny wierzchołek przeszukiwanego obszaru prostokątnego, dwuelementowa krotka liczb całkowitych. 
+                                \item solution - Set, początkowo pusty.
+                                \item tree - Aktualnie rozpatrywany wezęł quadtree, klasy quadtree.Node, w przypadku korzenia None.
+                                \item listoflines - Lista list odcinków, przydatna przy wizualizacji. List
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.\\
+                        Funkcja nie jest przewidziana jako część interfejsu publicznego klasy. \\
+                        Pomocnicza funkcja realizująca przeszukanie obszaru ortogonalnego. 
+                        
+                    \item get\_lines(self)
+                        \textbf{Argumenty:} brak.\\
+                        \textbf{Wartość zwracana:} Lista odcinków - list dwuelementowych, każdy element to krotka współrzędnych końca odcinka\\
+                        Funkcja wykorzystywana przy tworzeniu wizualizacji drzewa. 
+                \end{itemize}
+            \subsubsection{Przechowywane dane}
+                Instancja klasy przechowuje w pamięci korzeń odpowiadającego quadtree.\\
+                Dodatkowo pamiętana jest lista list odcinków wykorzystywana przy wizualizacji tworzenia drzewa.
+        \subsection{Klasa Node}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self, n, w, s, e, par, typ)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item n - północny kraniec obszaru obejmowanego przez węzeł - maksymalny y
+                                \item w - zachodni kraniec obszaru obejmowanego przez węzeł - minimalne x
+                                \item s - południowy kraniec obszaru obejmowanego przez węzeł - minimalny y 
+                                \item e - wschodni kraniec obszaru obejmowanego przez węzeł - maksymalny x 
+                                \item par - wskaźnik do rodzica obecnego węzła 
+                                \item typ - informacja czy dany wierzchołek jest korzeniem lub którym synem - NE, NW, SE, SW
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.
+                        
+                    \item add\_kid(self, nr, other)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item nr - numer wskazujący na typ dziecka obecnego węzła, według typu wyliczeniowego Child
+                                \item other - wskaźnik na nowy węzeł, będący konkretnym dzieckiem obecnego węzła
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.
+                    
+                    \item get\_kid(self, nr)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item nr - Indeks poddrzewa, liczba naturalna.
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} Poddrzewo o zadanym indeksie w węźle, klasy quadtree.Node.\\
+                        Funkcja zwraca poddrzewo danego węzła o zadanym indeksie.
+                    
+                    \item \_\_str\_\_(self)\\
+                        \textbf{Argumenty:} brak.\\
+                        \textbf{Wartość zwracana:} Łańcuch znaków. \\
+                        Funkcja zwraca reprezentację instancji klasy w postaci łańcucha znaków. 
+                    
+                    
+                \end{itemize}
+            \subsubsection{Przechowywane dane}
+                Instancja klasy przechowuje w pamięci informacje o obszarze obejmowanym przez dany węzeł, dane ułatwiające podział na dzieci, informację o typie węzła(czy korzeń lub które dziecko), informację o liczbie dzieci danego węzła, wskaźniki na rodzica, dzieci i punkt(znajdujący się w danym obszarze, dal liścia) o ile takie istnieją.
+                
+    \section{KD-Drzewa}
+        \textbf{Moduł: kdtree}
+        \subsection{Struktura modułu}
+            Moduł implementuje klasy:
+            \begin{itemize}
+                \item Kdtree - Enkapsulującą implementację drzewa.
+                \item Node - Reprezentującą węzeł kd-drzewa.
+            \end{itemize}
+        \subsection{Klasa Kdtree}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self, points)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item points - Lista, zawierająca statyczny zbiór punktów z płaszczyzny dwuwymiarowej we współrzędnych euklidesowych, reprezentowanych jako dwuelementowy krotki pierwszej i drugiej współrzędnej.  
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.\\
+                        \textbf{Złożoność: } O(nlogn)\\
+                        
+                    \item \_construct(self, points, depth=0)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item points - Zbiór punktów do podziału, klasy simple\_geometry.Point.
+                            \item depth - Głębokość, na jakiej znajduje się aktualnie tworzony węzeł drzewa, domyślnie 0, liczba naturalna. 
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} Skonstruowany korzeń drzewa, klasy kdtree.Node.\\
+                        \textbf{Złożoność: } O(nlogn)\\
+                        Pomocnicza funkcja rekurencyjna, konstruująca kd-drzewo i zwracająca jego korzeń. 
+                        
+                    \item find(self,  x\_low, x\_high, y\_low, y\_high)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item x\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                            \item x\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                            \item y\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                            \item y\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} Lista dwuelementowych krotek liczb całkowitych, zawierająca zbiór punktów przechowywanych w drzewie, należących do zadanego przez argumenty funkcji przedziału. \\
+                        \textbf{Złożoność: } $O(\sqrt{n}+k)$, gdzie $k$ jest licznością zbioru wynikowego.\\
+                        Funkcja odwołuje się do wewnętrznej funkcji realizującej przeszukanie kd-drzewa, stanowiąc dla niej wygodny dla użytkownika interfejs publiczny. 
+                    
+                \end{itemize}
+
+            \subsubsection{Przechowywane dane}
+            \begin{itemize}
+                \item scope - Najmniejszy obszar prostokątny, który zawiera wszystkie punkty przechowywane w drzewie, klasy simple\_geometry.Scope.
+                \item root - Korzeń drzewa, klasy kdtree.Node.
+            \end{itemize}
+            
+        \subsection{Klasa Node}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self, point, line, left, right)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item point - Dwuelementowa krotka liczb całkowitych, odpowiadająca punktowi z płaszczyzny dwuwymiarowej we współrzędnych euklidesowych.
+                            \item line - Współrzędna (liczba całkowita) prostej prostopadłej do osi układu, domyślnie None. 
+                            \item left - Lewe poddrzewo, klasy kdtree.Node, domyślnie Nonde. 
+                            \item right - Prawe poddrzewo, klasy kdtree.Node, domyślnie None.
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.
+                    
+                    
+                    \item report\_subtree(self)\\
+                        \textbf{Argumenty:} Brak.\\
+                        \textbf{Wartość zwracana:} Lista obiektów klasy simple\_geometry.Point\\
+                        Funkcja zwracająca wszystkie punkty przechowywane w danym poddrzewie.
+                    
+                    
+                    \item \_search(self, scope, actual\_scope, depth)
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item scope - Obszar, z którego punkty chcemy otrzymać, klasy simple\_geometry.Scope. 
+                            \item actual\_scope - Obaszar w jakim znajdują się punkty z aktualnie rozpatrywanego poddrzewa, klasy simple\_geometry.Scope, domyślnie wywołuje konstruktor tej klasy, bez wskazania żadnych argumentów. 
+                            \item depth - Głębokość, na jakiej znajduje się aktualnie przetwarzany węzeł drzewa, domyślnie 0, liczba naturalna. 
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} Lista obiektów klasy simple\_geometry.Point\\
+                        Funkcja realizująca rekurencyjnie algorytm przeszukania kd-drzewa na poziomie węzła. 
+                    
+                    
+                    \item check\_child(self, child, actual\_scope, depth, scope)
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item child - Aktualnie rozpatrywane poddrzewo, klasy kdtree.Node.
+                            \item actual\_scope - Obaszar w jakim znajdują się punkty z aktualnie rozpatrywanego poddrzewa, klasy simple\_geometry.Scope.
+                            \item depth - Głębokość, na jakiej znajduje się aktualnie przetwarzany węzeł drzewa, domyślnie 0, liczba naturalna. 
+                            \item scope - Obszar, z którego punkty chcemy otrzymać, klasy simple\_geometry.Scope. 
+                            \end{itemize}\\
+                        \textbf{Wartość zwracana:} Lista obiektów klasy
+                        Funkcja nie jest przewidziana jako część interfejsu publicznego klasy. \\
+                        Jest to funkcja pomocnicza metody \_search. 
+                    
+                \end{itemize}
+            \subsubsection{Przechowywane dane}
+                \begin{itemize}
+                    \item point - Jeżeli węzeł jest liściem, to przechowuje odpowiadający mu punkt płaszczyzny, w postaci instancji klasy simple\_geometry.Point, w przeciwnym przypadku None. 
+                    \item line - Jeśli węzeł nie jest liściem, przechowuje współrzędną (liczba całkowita) prostej prostopadłej do osi układu, podziałowi względem której odpowiada, w przeciwnym wypadku None. 
+                    \item left - Lewe poddrzewo, klasy kdtree.Node, lub None.
+                    \item right - Prawe poddrzewo, klasy kdtree.Node, lub None.
+                \end{itemize}
+                
+    \section{Prosta geometria}
+        \textbf{Moduł: simple\_geometry}
+        \subsection{Klasa Point}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self,s)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item s - Dwuelementowa krotka liczb całkowitych, odpowiadająca punktowi z płaszczyzny dwuwymiarowej we współrzędnych euklidesowych.                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.
+
+                    
+                    \item get\_tuple(self)\\
+                        \textbf{Argumenty:} brak.\\
+                        \textbf{Wartość zwracana:} Dwuelementowa krotka liczb całkowitych\\
+                        Funkcja zwraca przechowywany punkt w postaci dwuelementowej krotki liczb całkowitych. 
+                    
+                    
+                    \item \_\_str\_\_(self)\\
+                        \textbf{Argumenty:} brak.\\
+                        \textbf{Wartość zwracana:} Łańcuch znaków. \\
+                        Funkcja zwraca reprezentację instancji klasy w postaci łańcucha znaków. 
+                    
+                \end{itemize}
+            \subsubsection{Przechowywane dane}
+            \begin{itemize}
+                \item x\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                \item x\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                \item y\_low - Lewy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                \item y\_high - Prawy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+            \end{itemize}
+        
+        \subsection{Klasa Scope}
+            \subsubsection{Implementowane metody}
+                \begin{itemize}
+                    \item \_\_init\_\_(self, xl, xh, yl, yh)\\
+                        \textbf{Konstruktor klasy.} \\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item xl - Lewy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item xh - Prawy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item yl - Lewy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie -numpy.inf (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item yh - Prawy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie numpy.inf (reprezentacja nieskończoności), liczba całkowita.
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.
+
+                    
+                    \item \_\_str\_\_(self)\\
+                        \textbf{Argumenty:} brak.\\
+                        \textbf{Wartość zwracana:} Łańcuch znaków. \\
+                        Funkcja zwraca reprezentację instancji klasy w postaci łańcucha znaków. 
+                    
+                    \item from\_tuple(self, lowerleft, upperright)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item lowerleft - Lewy dolny wierzchołek przeszukiwanego obszaru prostokątnego, dwuelementowa krotka liczb
+                                całkowitych. 
+                                \item upperright - Prawy górny wierzchołek przeszukiwanego obszaru prostokątnego, dwuelementowa krotka liczb całkowitych. 
+                            \end{itemize}
+                        \textbf{Wartość zwracana:} simple\_geometry.Scope\\
+                        Funkcja aktualizuje zawartość przechowywanych pól, zgodnie z zadanym w postaci pary krotek obszarem.
+                    
+                    \item in\_scope(self, point)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item point - Punkt na płaszczyźnie, reprezentowany przez instancję klasy simple\_geometry.Point
+                            \end{itemize}
+                        \textbf{Wartość zwracana:} Wartość logiczna. \\
+                        Metoda odpowiada na pytanie, czy punkt podany jako argument należy do reprezentowanego obszaru. 
+
+                    
+                    \item contains(self, other)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item other - Obszar na płaszczyźnie, reprezentowany przez instancję klasy simple\_geometry.Scope
+                            \end{itemize}
+                        \textbf{Wartość zwracana:} Wartość logiczna. \\
+                        Metoda odpowiada na pytanie, czy obszar  podany jako argument zawiera się w całości w reprezentowanym obszarze. 
+                    
+                    \item intersects(self, other)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item other - Obszar na płaszczyźnie, reprezentowany przez instancję klasy simple\_geometry.Scope
+                            \end{itemize}
+                        \textbf{Wartość zwracana:} Wartość logiczna. \\
+                        Metoda odpowiada na pytanie, czy obszar  podany jako argument ma niezerowe przecięcie z reprezentowanym obszarem. 
+                    
+                    \item common(self, x\_low, x\_high, y\_low, y\_high)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                            \item xl - Lewy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie None (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item xh - Prawy kraniec zadanego przedziału prostokątnego względem osi odciętych, domyślnie None (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item yl - Lewy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie None (reprezentacja nieskończoności), liczba całkowita. 
+                
+                            \item yh - Prawy kraniec zadanego przedziału prostokątnego względem osi rzędnych, domyślnie None (reprezentacja nieskończoności), liczba całkowita.
+                        \end{itemize}\\
+                        \textbf{Wartość zwracana:} brak.\\
+                        Metoda realizująca operację przecięcia reprezentowanego obszaru, z obszarem podanym jako argument funkcji (gdzie nie występuje konieczność wykorzystania wszystkich argumentów, dla przykładu (x\_low = 10) reprezentuje półpłaszczyznę na prawo od prostej x=10). 
+
+                    
+                    \item copy(self, other)\\
+                        \textbf{Argumenty:} \begin{itemize}
+                                \item other - Obszar na płaszczyźnie, reprezentowany przez instancję klasy simple\_geometry.Scope
+                            \end{itemize}
+                        \textbf{Wartość zwracana:} Wartość logiczna. \\
+                        Metoda kopiuje obszar  podany jako argument. Od teraz staje się on nowym obszarem reprezentowanym przez instancję klasy.  
+                    
+                \end{itemize}
+            \subsubsection{Przechowywane dane}
+            \begin{itemize}
+                \item x - Pierwsza współrzędna przechowywanego punktu, liczba całkowita.
+                \item y - Druga współrzędna przechowywanego punktu, liczba całkowita. 
+            \end{itemize}
+
+    \section{Przykłady użycia}
+        \begin{lstlisting}[language=Python]
+            import generator 
+            test1 = generator.test_case_1()
+            scope = (10,100,10,60)
+
+            # QuadTree
+            import quadtree
+            tree = quadtree.Quadtree(test1)
+            solution = tree.find(*scope)
+            
+            # KDTree 
+            import kdtree
+            kd = kdtree.Kdtree(test1)
+            solution_kd = kd.find(*scope)
+        \end{lstlisting}    
+
+\end{document}
